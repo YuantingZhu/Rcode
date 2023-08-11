@@ -166,7 +166,7 @@ library("ggplot2")
 library("ggrepel")
 hs_data <- read.delim("clipboard")
 
-
+##HFvolcano
 ggplot(data = de_result, aes(x = logFC, y = -log10(P.Value)))+geom_point() 
 de_result$threshold = as.factor(ifelse(de_result$P.Value < 0.05 & abs(de_result$logFC) >= 0.6, ifelse(de_result$logFC> 0.6 ,'Up','Down'),'NoSignifi'))
 HFvolcano <- ggplot(data = de_result, aes(x = logFC, y = -log10(P.Value), colour=threshold,label = probe)) +
@@ -182,7 +182,7 @@ tiff(filename = "HFvolcano.tiff",width = 2000,height = 2000,res = 300)
 print(HFvolcano)
 dev.off()
 
-
+##HFheatmap
 HF_NF_sample_info <- filter(sample_info,group%in% c("HF","NF"))
 
 temp<- slice(de_result,1:120)%>%
@@ -191,6 +191,10 @@ temp <- as_tibble(temp)
 temp <-  na.omit(temp)%>%
   distinct(Gene_Symbol,.keep_all =TRUE)
 de_exp_top <-  column_to_rownames(temp,var = "Gene_Symbol")
+write.table(de_exp_top,file = "de_exp_top.txt",
+            sep ="\t",
+            quote = FALSE)
+
 
 cols <- list(group = c(HF= "red",
                        NF = "green"))
@@ -213,49 +217,6 @@ tiff(filename = "HFheatmap.tiff",width = 2000,height = 2000,res = 300)
 print(HFheatmap)
 dev.off()
 
-##NRDEGs volcano heatmap
-library("ggplot2")
-library("ggrepel")
-venn_all_de_result <- read_delim("venn_all_result.txt", 
-                                 delim = "\t", escape_double = FALSE, 
-                                 trim_ws = TRUE)
-
-ggplot(data =venn_all_de_result, aes(x = logFC, y = -log10(P.Value)))+geom_point() 
-venn_all_de_result$threshold = as.factor(ifelse(venn_all_de_result$P.Value < 0.05 & abs(venn_all_de_result$logFC) >= 0.6, ifelse(venn_all_de_result$logFC> 0.6 ,'Up','Down'),'NoSignifi'))
-
-p <- ggplot(data = venn_all_de_result, 
-            aes(x = logFC, 
-                y = -log10(P.Value),
-                colour=threshold,
-                label = venn_all_de_result$Gene_Symbol)) +
-  geom_point(alpha=0.4, size=2) +
-  scale_color_manual(values=c("blue", "grey","red"))+
-  xlim(c(-3, 3)) +
-  geom_vline(xintercept=c(-0.6,0.6),lty=2,col="black",lwd=0.4) +
-  geom_hline(yintercept = -log10(0.05),lty=2,col="black",lwd=0.4) +
-  labs(x="log2(fold change)",
-       y="-log10 (p-value)",
-       title="Differential genes")  +
-  theme_bw()+
-  theme(plot.title = element_text(hjust = 0.5), 
-        legend.position="right", 
-        legend.title = element_blank())
-
-p
-venn_all_de_result$label=ifelse(venn_all_de_result$P.Value < 0.05 & abs(venn_all_de_result$logFC) >= 0.6,venn_all_de_result$Gene_Symbol,"")
-venn_de_resultVolcano <- p+geom_text_repel(data = venn_all_de_result, aes(x = venn_all_de_result$logFC, 
-                                                                          y = -log10(venn_all_de_result$P.Value), 
-                                                                          label = label),
-                                           size = 4,box.padding =unit(0.1, "lines"),
-                                           point.padding = FALSE, 
-                                           segment.color = "black",
-                                           max.overlaps=80,
-                                           show.legend = FALSE)
-
-
-tiff(filename = "venn_de_resultVolcano.tiff",width = 2000,height = 2000,res = 300)
-print(venn_de_resultVolcano)
-dev.off()
 
 ##venn diagram
 install.packages("VennDiagram")
@@ -317,6 +278,53 @@ pviolin=pviolin+rotate_x_text(60)
 tiff(filename = "pviolin.tiff",width = 2000,height = 2000,res = 300)
 print(pviolin)
 dev.off()
+
+
+##NRDEGs volcano heatmap
+library("ggplot2")
+library("ggrepel")
+venn_all_de_result <- read_delim("venn_all_result.txt", 
+                                 delim = "\t", escape_double = FALSE, 
+                                 trim_ws = TRUE)
+
+ggplot(data =venn_all_de_result, aes(x = logFC, y = -log10(P.Value)))+geom_point() 
+venn_all_de_result$threshold = as.factor(ifelse(venn_all_de_result$P.Value < 0.05 & abs(venn_all_de_result$logFC) >= 0.6, ifelse(venn_all_de_result$logFC> 0.6 ,'Up','Down'),'NoSignifi'))
+
+p <- ggplot(data = venn_all_de_result, 
+            aes(x = logFC, 
+                y = -log10(P.Value),
+                colour=threshold,
+                label = venn_all_de_result$Gene_Symbol)) +
+  geom_point(alpha=0.4, size=2) +
+  scale_color_manual(values=c("blue", "grey","red"))+
+  xlim(c(-3, 3)) +
+  geom_vline(xintercept=c(-0.6,0.6),lty=2,col="black",lwd=0.4) +
+  geom_hline(yintercept = -log10(0.05),lty=2,col="black",lwd=0.4) +
+  labs(x="log2(fold change)",
+       y="-log10 (p-value)",
+       title="Differential genes")  +
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5), 
+        legend.position="right", 
+        legend.title = element_blank())
+
+p
+venn_all_de_result$label=ifelse(venn_all_de_result$P.Value < 0.05 & abs(venn_all_de_result$logFC) >= 0.6,venn_all_de_result$Gene_Symbol,"")
+venn_de_resultVolcano <- p+geom_text_repel(data = venn_all_de_result, aes(x = venn_all_de_result$logFC, 
+                                                                          y = -log10(venn_all_de_result$P.Value), 
+                                                                          label = label),
+                                           size = 4,box.padding =unit(0.1, "lines"),
+                                           point.padding = FALSE, 
+                                           segment.color = "black",
+                                           max.overlaps=80,
+                                           show.legend = FALSE)
+
+
+tiff(filename = "venn_de_resultVolcano.tiff",width = 2000,height = 2000,res = 300)
+print(venn_de_resultVolcano)
+dev.off()
+
+
 
 ##NRDEGs heatmap
 HF_NF_sample_info <- filter(sample_info,group%in%c("HF","NF"))
@@ -776,103 +784,139 @@ dev.off()
 
 
 
+
 ##GSE21610
-geneviolinCASP1=read.table("de_result26210CASP1.txt",header=T,sep="\t",check.names=F,row.names=1)
 
-dataviolinCASP1 <- melt(geneviolinCASP1,id.vars = c("group"),variable.name ='Gene',
-                        value.name = 'Expression')
-dataviolinCASP1$Expression=as.numeric(dataviolinCASP1$Expression)
+#引用包
+library(ggplot2)
+library(reshape2)
+library(ggpubr)
+inputFile="de_result26210DDX58.txt"       #输入
+outFile="barplot.pdf"       #输出
 
-colnames(dataviolinCASP1)=c("Group","Gene","Expression")
+#读取文件
+rt=read.table(inputFile,header=T,sep="\t",check.names=F,row.names=1)
 
-pviolinCASP1=ggviolin(dataviolinCASP1, x="Gene", y="Expression", color = "Group", 
-                      ylab="Gene expression",
-                      add.params = list(fill="white"),
-                      palette = c("#009393","#AE0000"),
-                      width=1, add = "boxplot")
+x=colnames(rt)[1]
 
-tiff(filename = "pviolinCASP1.tiff",width = 2000,height = 2000,res = 300)
-print(pviolinCASP1)
-dev.off()
+data <- melt(rt,id.vars = c("group"),variable.name ='Gene',
+             value.name = 'Expression')
+data$Expression=as.numeric(data$Expression)
 
+colnames(data)=c("group","Gene","Expression")
 
-geneviolinDDX58=read.table("de_result26210DDX58.txt",header=T,sep="\t",check.names=F,row.names=1)
-
-dataviolinDDX58 <- melt(geneviolinDDX58,id.vars = c("group"),variable.name ='Gene',
-                        value.name = 'Expression')
-dataviolinDDX58$Expression=as.numeric(dataviolinDDX58$Expression)
-
-colnames(dataviolinDDX58)=c("Group","Gene","Expression")
-
-pviolinDDX58=ggviolin(dataviolinDDX58, x="Gene", y="Expression", color = "Group", 
-                      ylab="Gene expression",
-                      add.params = list(fill="white"),
-                      palette = c("#009393","#AE0000"),
-                      width=1, add = "boxplot")
-
-tiff(filename = "pviolinDDX58.tiff",width = 2000,height = 2000,res = 300)
-print(pviolinDDX58)
-dev.off()
+DDX58=ggviolin(data, x="Gene", y="Expression", color = "group", 
+               ylab="Gene expression",
+               add.params = list(fill="white"),
+               palette = c("#009393","#AE0000"),
+               width=0.5, add = "mean_ci")+xlab(NULL)
 
 
-geneviolinHSP90AB1=read.table("de_result26210HSP90AB1.txt",header=T,sep="\t",check.names=F,row.names=1)
-
-dataviolinHSP90AB1 <- melt(geneviolinHSP90AB1,id.vars = c("group"),variable.name ='Gene',
-                           value.name = 'Expression')
-dataviolinHSP90AB1$Expression=as.numeric(dataviolinHSP90AB1$Expression)
-
-colnames(dataviolinHSP90AB1)=c("Group","Gene","Expression")
-
-pviolinHSP90AB1=ggviolin(dataviolinHSP90AB1, x="Gene", y="Expression", color = "Group", 
-                         ylab="Gene expression",
-                         add.params = list(fill="white"),
-                         palette = c("#009393","#AE0000"),
-                         width=1, add = "boxplot")
-
-tiff(filename = "pviolinHSP90AB1.tiff",width = 2000,height = 2000,res = 300)
-print(pviolinHSP90AB1)
+tiff(filename = "DDX58.tiff",width = 800,height = 1000,res = 300)
+print(DDX58)
 dev.off()
 
 
 
-geneviolinJAK2=read.table("de_result26210JAK2.txt",header=T,sep="\t",check.names=F,row.names=1)
+#CASP1
+inputFile="de_result26210CASP1.txt"   
 
-dataviolinJAK2 <- melt(geneviolinJAK2,id.vars = c("group"),variable.name ='Gene',
-                       value.name = 'Expression')
-dataviolinJAK2$Expression=as.numeric(dataviolinJAK2$Expression)
+rt=read.table(inputFile,header=T,sep="\t",check.names=F,row.names=1)
 
-colnames(dataviolinJAK2)=c("Group","Gene","Expression")
+x=colnames(rt)[1]
 
-pviolinJAK2=ggviolin(dataviolinJAK2, x="Gene", y="Expression", color = "Group", 
-                     ylab="Gene expression",
-                     add.params = list(fill="white"),
-                     palette = c("#009393","#AE0000"),
-                     width=1, add = "boxplot")
+data <- melt(rt,id.vars = c("group"),variable.name ='Gene',
+             value.name = 'Expression')
+data$Expression=as.numeric(data$Expression)
 
-tiff(filename = "pviolinJAK2.tiff",width = 2000,height = 2000,res = 300)
-print(pviolinJAK2)
+colnames(data)=c("group","Gene","Expression")
+
+CASP1=ggviolin(data, x="Gene", y="Expression", color = "group", 
+               ylab="Gene expression",
+               add.params = list(fill="white"),
+               palette = c("#009393","#AE0000"),
+               width=0.5, add = "mean_ci")+xlab(NULL)
+
+
+tiff(filename = "CASP1.tiff",width = 800,height = 1000,res = 300)
+print(CASP1)
+dev.off()
+
+
+#JAK2
+inputFile="de_result26210JAK2.txt"   
+
+rt=read.table(inputFile,header=T,sep="\t",check.names=F,row.names=1)
+
+x=colnames(rt)[1]
+
+data <- melt(rt,id.vars = c("group"),variable.name ='Gene',
+             value.name = 'Expression')
+data$Expression=as.numeric(data$Expression)
+
+colnames(data)=c("group","Gene","Expression")
+
+JAK2=ggviolin(data, x="Gene", y="Expression", color = "group", 
+              ylab="Gene expression",
+              add.params = list(fill="white"),
+              palette = c("#009393","#AE0000"),
+              width=0.5, add = "mean_ci")+xlab(NULL)
+
+
+tiff(filename = "JAK2.tiff",width = 800,height = 1000,res = 300)
+print(JAK2)
+dev.off()
+
+#STAT4
+inputFile="de_result26210STAT4.txt"   
+rt=read.table(inputFile,header=T,sep="\t",check.names=F,row.names=1)
+
+x=colnames(rt)[1]
+
+data <- melt(rt,id.vars = c("group"),variable.name ='Gene',
+             value.name = 'Expression')
+data$Expression=as.numeric(data$Expression)
+
+colnames(data)=c("group","Gene","Expression")
+
+STAT4=ggviolin(data, x="Gene", y="Expression", color = "group", 
+               ylab="Gene expression",
+               add.params = list(fill="white"),
+               palette = c("#009393","#AE0000"),
+               width=0.5, add = "mean_ci")+xlab(NULL)
+
+
+tiff(filename = "STAT4.tiff",width = 800,height = 1000,res = 300)
+print(STAT4)
 dev.off()
 
 
 
+#HSP90AB1
+inputFile="de_result26210HSP90AB1.txt"   
+rt=read.table(inputFile,header=T,sep="\t",check.names=F,row.names=1)
 
-geneviolinSTAT4=read.table("de_result26210STAT4.txt",header=T,sep="\t",check.names=F,row.names=1)
+x=colnames(rt)[1]
 
-dataviolinSTAT4 <- melt(geneviolinSTAT4,id.vars = c("group"),variable.name ='Gene',
-                        value.name = 'Expression')
-dataviolinSTAT4$Expression=as.numeric(dataviolinSTAT4$Expression)
+data <- melt(rt,id.vars = c("group"),variable.name ='Gene',
+             value.name = 'Expression')
+data$Expression=as.numeric(data$Expression)
 
-colnames(dataviolinSTAT4)=c("Group","Gene","Expression")
+colnames(data)=c("group","Gene","Expression")
 
-pviolinSTAT4=ggviolin(dataviolinSTAT4, x="Gene", y="Expression", color = "Group", 
-                      ylab="Gene expression",
-                      add.params = list(fill="white"),
-                      palette = c("#009393","#AE0000"),
-                      width=1, add = "boxplot")
+HSP90AB1=ggviolin(data, x="Gene", y="Expression", color = "group", 
+                  ylab="Gene expression",
+                  add.params = list(fill="white"),
+                  palette = c("#009393","#AE0000"),
+                  width=0.5, add = "mean_ci")+xlab(NULL)
 
-tiff(filename = "pviolinSTAT4.tiff",width = 2000,height = 2000,res = 300)
-print(pviolinSTAT4)
+
+tiff(filename = "HSP90AB1.tiff",width = 800,height = 1000,res = 300)
+print(HSP90AB1)
 dev.off()
+
+
+
 
 
 
